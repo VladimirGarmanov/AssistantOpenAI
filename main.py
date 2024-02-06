@@ -3,14 +3,14 @@ import asyncio
 import sqlite3
 from aiogram import Bot, Dispatcher, types, executor
 import openai
-client = openai.OpenAI(api_key="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")
-Assistant_ID = 'asst_FHM2vXbTHBZdBQUQ4wbPipwK'
-TELEGRAM_TOKEN = '6671314480:AAGmeTFRxedPPYR4782fkkqTDfNVPhebSWw'
 
+client = openai.OpenAI(api_key="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")
+
+Assistant_ID = 'asst_16STHCAmHqMOgQ4bD2XUyZUh'
+TELEGRAM_TOKEN = '6787450167:AAGByC55w7mBxObi0hK7XWh29NOqgBMTqEs'
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher(bot)
-
 
 conn = sqlite3.connect('users.db')
 cursor = conn.cursor()
@@ -19,6 +19,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS users (
     thread TEXT
 )''')
 conn.commit()
+
 
 # Функция для добавления пользователя в базу данных
 async def handle_with_assistant(message, chat_id):
@@ -35,9 +36,8 @@ async def handle_with_assistant(message, chat_id):
     run = client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=Assistant_ID,
-        instructions=f"Be Pleasant."
-    )
 
+    )
 
     time.sleep(10)
     run_status = client.beta.threads.runs.retrieve(
@@ -58,11 +58,12 @@ async def handle_with_assistant(message, chat_id):
             thread_id=thread_id
         )
 
-        msg=messages.data[0]
+        msg = messages.data[0]
         role = msg.role
         content = msg.content[0].text.value
         print(f"{role.capitalize()}: {content}")
         await bot.send_message(chat_id=message.chat.id, text=content)
+
 
 def add_user(chat_id):
     cursor.execute('SELECT chat_id FROM users WHERE chat_id = ?', (chat_id,))
@@ -71,17 +72,23 @@ def add_user(chat_id):
         cursor.execute('INSERT INTO users (chat_id, thread) VALUES (?, ?)', (chat_id, thread.id))
         conn.commit()
     return thread.id
-async def answer_user(message_response,message):
+
+
+async def answer_user(message_response, message):
     await message.answer(message_response)
+
 
 @dp.message_handler(commands=['start'])
 async def start_command(message: types.Message):
     add_user(message.chat.id)
     await message.answer("Привет! Вы зарегистрированы.")
+
+
 @dp.message_handler(content_types=types.ContentTypes.TEXT)
 async def echo_message(message: types.Message):
-
     await handle_with_assistant(message, message.chat.id)
+
+
 # Запуск бота
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
